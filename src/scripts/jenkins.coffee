@@ -12,7 +12,7 @@
 #
 # Commands:
 #   hubot jenkins b <jobNumber> - builds the job specified by jobNumber. List jobs to get number.
-#   hubot jenkins build <job> - builds the specified Jenkins job
+,#   hubot jenkins build <job> - builds the specified Jenkins job
 #   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
 #   hubot jenkins list <filter> - lists Jenkins jobs
 #   hubot jenkins describe <job> - Describes the specified Jenkins job
@@ -21,6 +21,9 @@
 #
 # Author:
 #   dougcole
+
+JenkinsApi = require('jenkins-api')
+Params = require(Path.join(__dirname, "..", "params"))
 
 querystring = require 'querystring'
 
@@ -40,28 +43,31 @@ jenkinsBuildById = (msg) ->
     msg.reply "I couldn't find that job. Try `jenkins list` to get a list."
 
 jenkinsBuild = (msg, buildWithEmptyParameters) ->
-    url = process.env.HUBOT_JENKINS_URL
+    if process.env.HUBOT_JENKINS_AUTH
+      [username, password] = process.env.HUBOT_JENKINS_AUTH.split ':'
+      jenkins = jenkinsapi.init(process.env.HUBOT_JENKINS_URL, {
+        'auth' : {
+          username: password
+        }
+      })
+    else
+      jenkins = jenkinsapi.init(process.env.HUBOT_JENKINS_URL)
+
     job = querystring.escape msg.match[1]
     params = msg.match[3]
-    command = if buildWithEmptyParameters then "buildWithParameters" else "build"
-    path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/#{command}"
 
-    req = msg.http(path)
+    process_reply = (err, data) ->
+      if err
+        msg.reply "Jenkins says: #{err}"
+      else
+        msg.reply "#{data.message} #{data.location}"
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
-      req.headers Authorization: "Basic #{auth}"
-
-    req.header('Content-Length', 0)
-    req.post() (err, res, body) ->
-        if err
-          msg.reply "Jenkins says: #{err}"
-        else if 200 <= res.statusCode < 400 # Or, not an error code.
-          msg.reply "(#{res.statusCode}) Build started for #{job} #{url}/job/#{job}"
-        else if 400 == res.statusCode
-          jenkinsBuild(msg, true)
-        else
-          msg.reply "Jenkins says: Status #{res.statusCode} #{body}"
+    if buildWithEmptyParameters
+      jenkins.build(job) (err, data) ->
+        process_reply(err,data)
+    else
+      jenkins.build(job, Params.parseParams(params)) (err, data) ->
+        process_reply(err,data)
 
 jenkinsDescribe = (msg) ->
     url = process.env.HUBOT_JENKINS_URL
