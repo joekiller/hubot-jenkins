@@ -23,15 +23,24 @@
 #   dougcole
 
 Path  = require("path")
-JenkinsApi = require "jenkins-api"
-Params = require(Path.join(__dirname, "..", "params"))
-
+JenkinsApi = require 'jenkins-api'
 querystring = require 'querystring'
 
 # Holds a list of jobs, so we can trigger them with a number
 # instead of the job's name. Gets populated on when calling
 # list.
 jobList = []
+
+parseParams = (params) ->
+  raw_vars = params.split '&'
+
+  parsed_params = {}
+
+  for v in raw_vars
+    [key, val] = v.split("=")
+    parsed_params[key] = decodeURIComponent(val)
+
+  parsed_params
 
 jenkinsBuildById = (msg) ->
   # Switch the index with the job name
@@ -46,29 +55,26 @@ jenkinsBuildById = (msg) ->
 jenkinsBuild = (msg, buildWithEmptyParameters) ->
     if process.env.HUBOT_JENKINS_AUTH
       [username, password] = process.env.HUBOT_JENKINS_AUTH.split ':'
-      jenkins = jenkinsapi.init(process.env.HUBOT_JENKINS_URL, {
-        'auth' : {
-          username: password
+      jenkins = JenkinsApi.init(process.env.HUBOT_JENKINS_URL, {
+        auth: {
+          'user': username
+          'pass': password
         }
       })
     else
-      jenkins = jenkinsapi.init(process.env.HUBOT_JENKINS_URL)
+      jenkins = JenkinsApi.init(process.env.HUBOT_JENKINS_URL)
 
     job = querystring.escape msg.match[1]
     params = msg.match[3]
 
-    process_reply = (err, data) ->
-      if err
-        msg.reply "Jenkins says: #{err}"
-      else
-        msg.reply "#{data.message} #{data.location}"
 
-    if buildWithEmptyParameters
-      jenkins.build(job) (err, data) ->
-        process_reply(err,data)
+    if params
+      params = parseParams params
+    jenkins.build job, params, (err, data) ->
+    if err
+      msg.reply JSON.stringify err
     else
-      jenkins.build(job, Params.parseParams(params)) (err, data) ->
-        process_reply(err,data)
+      msg.reply JSON.stringify data
 
 jenkinsDescribe = (msg) ->
     url = process.env.HUBOT_JENKINS_URL
