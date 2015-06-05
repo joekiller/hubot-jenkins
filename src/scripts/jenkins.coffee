@@ -23,7 +23,7 @@
 #   dougcole
 
 Path  = require("path")
-JenkinsApi = require('jenkins-api')
+JenkinsApi = require "jenkins-api"
 Params = require(Path.join(__dirname, "..", "params"))
 
 querystring = require 'querystring'
