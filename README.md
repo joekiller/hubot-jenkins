@@ -1,5 +1,7 @@
 #Description:
  Interact with your Jenkins CI server
+ This is being ported to jenkins-api to expose OAuth options.
+ Coffee script help from: https://gist.github.com/larrycai/8450214
 
 #Dependencies:
  None
