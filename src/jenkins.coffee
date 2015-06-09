@@ -8,6 +8,9 @@ jenkinsErrorReply = (msg, err, content) ->
     if content.statusCode == 403
       msg.reply "You appear to be unauthorized."
       msg.reply "Setup an auth token with jenkins-token:set <username:token>"
+    if content.statusCode == 401
+      msg.reply "Authorization failed."
+      msg.reply "Try setting up an auth token with jenkins-token:set <username:token>"
 
 # Holds a list of jobs, so we can trigger them with a number
 # instead of the job's name. Gets populated on when calling
