@@ -21,7 +21,8 @@
 
   "dependencies": {
     "coffee-script": "~1.6",
-    "jenkins-api": "~>0.2.7"
+    "jenkins-api": "~>0.2.7",
+    "url-parse": "~>1.0.1"
   },
 
   "devDependencies": {
