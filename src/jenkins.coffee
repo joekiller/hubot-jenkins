@@ -134,7 +134,6 @@ class Jenkins
       if err
         msg.send "error, status= #{content.statusCode}"
       else
-        msg.send "#{JSON.stringify content}"
         response = ""
         for job in content
         # Add the job to the jobList
